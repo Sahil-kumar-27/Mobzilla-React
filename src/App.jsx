@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import SearchBar from './components/SearchBar'
 import Spinner from './components/Spinner'
 import ErrorMessage from './components/ErrorMessage'
+import MovieCard from './components/MovieCard'
 
 
 
@@ -59,10 +60,13 @@ const App = () => {
     setPage(1);
   }
 
+  const displayedMovies = movies;
+
+
 
   return (
     <div className='container mx-auto p-4 flex flex-col items-center text-center'>
-    <h1 className='text-4xl font-extrabold mb-6 drop-shadow-2xl'>CineStack</h1>
+    <h1 className='text-4xl font-extrabold mb-6 drop-shadow-2xl'>Mobzilla</h1>
     <div className="tabs tabs-border mb-6">
         <a
           className={`tab text-lg ${view === "search" ? "tab-active" : ""}`}
@@ -89,6 +93,22 @@ const App = () => {
 
       {loading && <Spinner />}
       {error && <ErrorMessage message={error} />}
+      {!loading && !error && displayedMovies.length === 0 && (
+        <div>
+          No movies found. {" "} {
+            view === "favorites" ? "Add some to your favorites!" : "Try searching for something else."
+          }
+          
+        </div>
+      )}
+      {!loading && !error && displayedMovies.length > 0 && (
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full'>
+            {displayedMovies.map(movie =>(
+              <MovieCard key= {movie.id} movie={movie} />
+            ) )}
+
+            </div>
+          )}
 
     </div>
   )
