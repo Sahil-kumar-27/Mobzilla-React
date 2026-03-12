@@ -3,6 +3,8 @@ import SearchBar from './components/SearchBar'
 import Spinner from './components/Spinner'
 import ErrorMessage from './components/ErrorMessage'
 import MovieCard from './components/MovieCard'
+import MoviesDetailsModal from './components/MoviesDetailsModal'
+import Pagination from './components/Pagination'
 
 
 
@@ -10,6 +12,7 @@ const App = () => {
   const [movies, setMovies] = useState([])
   const [favorites, setfavorites] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [initialized, setInitialized] = useState(false)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -21,7 +24,22 @@ const App = () => {
   
 
   const API_KEY = import.meta.env.VITE_TMDB_API_KEY
-  
+
+  useEffect(() => {
+    const storedFavorites = JSON.parse(localStorage.getItem("favorites")) || [];
+    setfavorites(storedFavorites);
+    setInitialized(true);
+  }, [])
+
+
+
+  useEffect(() => { 
+    if (initialized) {
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+    }
+  }, [favorites, initialized]);
+
+
 
   useEffect(() => {
     if (view === "favorites") {
@@ -47,20 +65,62 @@ const App = () => {
         setMovies(data.results);
         setTotalPages(Math.min(data.total_pages || 0, 500));
       } catch (err) {
-        setError("Failed to fetch movies.");
+        setError("Failed to fetch movies.")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     };
-    fetchMovies();
-  }, [searchTerm, page, view]);
+    fetchMovies()
+  }, [searchTerm, page, view])
 
   const handleSearch = (term) => {
-    setSearchTerm(term);
-    setPage(1);
+    setSearchTerm(term)
+    setPage(1)
   }
 
-  const displayedMovies = movies;
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage)
+    }
+  }
+
+  const openModal = async (movieId) => {
+    setError(null)
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${API_KEY}`)
+      if (!res.ok) throw new Error("Failed to fetch movie details")
+      const data = await res.json()
+      setSelectedMovie(data)
+    } catch (err) {
+      setError("Failed to fetch movie details.")
+    }
+  }
+
+  const closeModal = () =>  setSelectedMovie(null)
+  
+
+  const toggleFavorite = (movie) => {
+    const exists = favorites.some((f)=> f.id === movie.id)
+    if (exists) {
+      setfavorites(favorites.filter((f) => f.id !== movie.id));
+    } else {
+      const favMovie = {
+        id: movie.id,
+        title: movie.title,
+        release_date: movie.release_date,
+        poster_path: movie.poster_path,
+        overview: movie.overview,
+        vote_average: movie.vote_average
+      }
+      setfavorites([...favorites, favMovie]);
+      
+    }
+  }
+
+  const isFavorite = (movie) =>  favorites.some((f) => f.id === movie.id)
+  
+
+  const displayedMovies = view === "search" ? movies : favorites
 
 
 
@@ -104,10 +164,31 @@ const App = () => {
       {!loading && !error && displayedMovies.length > 0 && (
             <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full'>
             {displayedMovies.map(movie =>(
-              <MovieCard key= {movie.id} movie={movie} />
+              <MovieCard 
+                key= {movie.id} movie={movie}
+                onToggleFavorite={toggleFavorite} 
+                isFavorite={isFavorite(movie)}
+                onViewDetails = {openModal}
+
+                />
             ) )}
 
             </div>
+          )}
+
+          {view === "search" && totalPages > 1 && !loading && !error && (
+            <div className='mt-6' >
+              <Pagination currentPage = {page} totalPages= {totalPages} 
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
+
+          {selectedMovie && (
+            <MoviesDetailsModal movie={selectedMovie} onClose={closeModal} 
+              isFavorite={isFavorite(selectedMovie)} 
+              onToggleFavorite={()=> toggleFavorite(selectedMovie)}
+            />
           )}
 
     </div>

@@ -1,13 +1,13 @@
 import React from 'react'
 
-const MovieCard = ({movie}) => {
+const MovieCard = ({movie, isFavorite, onToggleFavorite, onViewDetails}) => {
 
     const posterUrl = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "https://via.placeholder.com/500x750?text=No+Image"
   return (
     <div className='relative group rounded-2xl overflow-hidden shadow-lg'>
      {/* poster */}
 
-      <img className='w-full h-96 object-cover group-hover:scale-110 duration-300'
+      <img className="w-full aspect-2/3 object-contain bg-black group-hover:scale-110 duration-300"
         src={posterUrl}
         alt={movie.title}
       />
@@ -22,8 +22,13 @@ const MovieCard = ({movie}) => {
             {movie.release_date ? movie.release_date.substring(0, 4) : "N/A"}
         </p>
         <div className='flex gap-2'>
-        <button className='btn btn-sm btn-primary'>Details</button>
-        <button className='btn btn-sm'>Favorite</button>
+        <button className='btn btn-sm btn-primary' onClick={()=> onViewDetails(movie.id)}>Details</button>
+        <button onClick={() => onToggleFavorite(movie)} 
+        
+            className={` btn btn-sm ${isFavorite ? "btn-error" : "btn-secondary "}`}>
+
+            {isFavorite ? "Remove" : "Favorite"}
+        </button>
         </div>
       </div>
 
